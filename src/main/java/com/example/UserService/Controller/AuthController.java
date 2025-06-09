@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,20 +22,25 @@ public class AuthController {
     }
 
     @PostMapping("/signUp")
-    public ResponseEntity<SignUpResponseDto> signUp(SignUpRequestDto signUpRequestDto) {
+    public ResponseEntity<SignUpResponseDto> signUp(@RequestBody SignUpRequestDto signUpRequestDto) {
         SignUpResponseDto signUpResponseDto = new SignUpResponseDto();
 
-        if (authService.signUp(signUpRequestDto.getEmail(), signUpRequestDto.getPassword())) {
-            signUpResponseDto.setStatus(RequestStatus.SUCCESS);
-        } else {
+        try {
+            if (authService.signUp(signUpRequestDto.getEmail(), signUpRequestDto.getPassword())) {
+                signUpResponseDto.setStatus(RequestStatus.SUCCESS);
+            } else {
+                signUpResponseDto.setStatus(RequestStatus.FAILURE);
+            }
+            return ResponseEntity.ok(signUpResponseDto);
+        } catch (Exception e) {
             signUpResponseDto.setStatus(RequestStatus.FAILURE);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(signUpResponseDto);
         }
-        return ResponseEntity.ok(signUpResponseDto);
     }
 
     @PostMapping("/login")
     // ResponseEntity is a Spring Class that allow you to set HTTPStatusCode, Header, etc.
-    public ResponseEntity<LoginResponseDto> login(LoginRequestDto loginRequestDto) {
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
         String token = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
         LoginResponseDto loginResponseDto = new LoginResponseDto();
         loginResponseDto.setStatus(RequestStatus.SUCCESS);
