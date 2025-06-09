@@ -41,18 +41,29 @@ public class AuthController {
     @PostMapping("/login")
     // ResponseEntity is a Spring Class that allow you to set HTTPStatusCode, Header, etc.
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
-        String token = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
         LoginResponseDto loginResponseDto = new LoginResponseDto();
-        loginResponseDto.setStatus(RequestStatus.SUCCESS);
 
-        MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
-        headers.add("AUTH_TOKEN", token);
-        ResponseEntity<LoginResponseDto> response = new ResponseEntity<>(
-                loginResponseDto,
-                headers,
-                HttpStatus.OK
-        );
+        try {
+            String token = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
+            loginResponseDto.setStatus(RequestStatus.SUCCESS);
 
-        return response;
+            MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
+            headers.add("AUTH_TOKEN", token);
+            ResponseEntity<LoginResponseDto> response = new ResponseEntity<>(
+                    loginResponseDto,
+                    headers,
+                    HttpStatus.OK
+            );
+
+            return response;
+        } catch (Exception e) {
+            loginResponseDto.setStatus(RequestStatus.FAILURE);
+            ResponseEntity<LoginResponseDto> response = new ResponseEntity<>(
+                    loginResponseDto,
+                    null,
+                    HttpStatus.BAD_REQUEST
+            );
+            return response;
+        }
     }
 }
