@@ -5,15 +5,18 @@ import com.example.UserService.Exception.UserNotFoundException;
 import com.example.UserService.Exception.WrongPasswordException;
 import com.example.UserService.Models.User;
 import com.example.UserService.Repositories.UserRepository;
+import io.jsonwebtoken.Jwts;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import javax.crypto.SecretKey;
+import java.util.*;
 
 @Service
 public class AuthService {
     private UserRepository userRepository;
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+    private SecretKey key = Jwts.SIG.HS256.key().build();               // HS256 is a algorithm
 
     public AuthService(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder) {
         this.userRepository = userRepository;
@@ -44,6 +47,27 @@ public class AuthService {
             throw new WrongPasswordException("Wrong password");
         }
 
-        return "Token";
+        return createJwtToken(userOptional.get().getId(), new ArrayList<>(), userOptional.get().getEmail());
+    }
+
+    private String createJwtToken(Long userId, List<String> roles, String email) {
+        Map<String, Object> dataInJwt = new HashMap<>();
+        dataInJwt.put("user_id", userId);
+        dataInJwt.put("roles", roles);
+        dataInJwt.put("email", email);
+
+        Calendar calendar = Calendar.getInstance();
+        Date currentDate = calendar.getTime();
+        calendar.add(Calendar.DAY_OF_MONTH, 30);
+        Date datePlus30Days = calendar.getTime();
+
+        String token = Jwts.builder()
+                .claims(dataInJwt)
+                .expiration(datePlus30Days)
+                .issuedAt(new Date())
+                .signWith(key)
+                .compact();
+
+        return token;
     }
 }
