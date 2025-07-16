@@ -55,8 +55,24 @@ public class AuthService {
             throw new WrongPasswordException("Wrong password");
         }
 
-        return createJwtToken(userOptional.get().getId(), new ArrayList<>(), userOptional.get().getEmail());
+        String token = createJwtToken(userOptional.get().getId(), new ArrayList<>(), userOptional.get().getEmail());
+
+        // Save session
+        Session session = new Session();
+        session.setToken(token);
+        session.setUser(userOptional.get());
+        // Expiration of 30 days from now
+        Calendar calendar = Calendar.getInstance();
+        Date currentDate = calendar.getTime();
+        calendar.add(Calendar.DAY_OF_MONTH, 30);
+        Date datePlus30Days = calendar.getTime();
+
+        session.setExpiringAt(datePlus30Days);
+        sessionRepository.save(session);
+
+        return token;
     }
+
     public Boolean validate(String token) {
         try {
             Jws<Claims> claims = Jwts.parser()
