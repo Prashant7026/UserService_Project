@@ -3,8 +3,12 @@ package com.example.UserService.Services;
 import com.example.UserService.Exception.UserAlreadyExistsException;
 import com.example.UserService.Exception.UserNotFoundException;
 import com.example.UserService.Exception.WrongPasswordException;
+import com.example.UserService.Models.Session;
 import com.example.UserService.Models.User;
+import com.example.UserService.Repositories.SessionRepository;
 import com.example.UserService.Repositories.UserRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,10 +21,14 @@ public class AuthService {
     private UserRepository userRepository;
     private BCryptPasswordEncoder bCryptPasswordEncoder;
     private SecretKey key = Jwts.SIG.HS256.key().build();               // HS256 is a algorithm
+    private SessionRepository sessionRepository;
 
-    public AuthService(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public AuthService(UserRepository userRepository,
+                       BCryptPasswordEncoder bCryptPasswordEncoder,
+                       SessionRepository sessionRepository) {
         this.userRepository = userRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.sessionRepository = sessionRepository;
     }
 
     public boolean signUp(String email, String password) throws UserAlreadyExistsException {
@@ -48,6 +56,24 @@ public class AuthService {
         }
 
         return createJwtToken(userOptional.get().getId(), new ArrayList<>(), userOptional.get().getEmail());
+    public Boolean validate(String token) {
+        try {
+            Jws<Claims> claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token);
+
+            /*
+            // We can do all the checks/validations here
+            Date expriyDate = claims.getPayload().getExpiration();
+            Long userId = claims.getPayload().get("user_id", Long.class);
+             */
+
+        } catch (Exception e) {
+            return false;
+        }
+
+        return true;
     }
 
     private String createJwtToken(Long userId, List<String> roles, String email) {
