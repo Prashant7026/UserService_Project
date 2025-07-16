@@ -56,6 +56,7 @@ public class AuthService {
         }
 
         return createJwtToken(userOptional.get().getId(), new ArrayList<>(), userOptional.get().getEmail());
+    }
     public Boolean validate(String token) {
         try {
             Jws<Claims> claims = Jwts.parser()
