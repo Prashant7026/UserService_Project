@@ -91,6 +91,10 @@ public class AuthService {
             Calendar calendar = Calendar.getInstance();
             Date currentDate = calendar.getTime();
             if (expriyDate.equals(currentDate)) {
+                String userId = claims.getPayload().getId();
+                Session expiredSession = sessionRepository.getFirstByToken(token);
+                expiredSession.setSessionStatus(SessionStatus.ENDED);
+                sessionRepository.save(expiredSession);
                 throw new LoginSessionExpiredException("Session has expired");
             }
             Long userId = claims.getPayload().get("user_id", Long.class);
