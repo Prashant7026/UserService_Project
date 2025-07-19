@@ -1,10 +1,8 @@
 package com.example.UserService.Services;
 
-import com.example.UserService.Exception.LoginSessionExpiredException;
-import com.example.UserService.Exception.UserAlreadyExistsException;
-import com.example.UserService.Exception.UserNotFoundException;
-import com.example.UserService.Exception.WrongPasswordException;
+import com.example.UserService.Exception.*;
 import com.example.UserService.Models.Session;
+import com.example.UserService.Models.SessionStatus;
 import com.example.UserService.Models.User;
 import com.example.UserService.Repositories.SessionRepository;
 import com.example.UserService.Repositories.UserRepository;
@@ -49,7 +47,7 @@ public class AuthService {
         return true;
     }
 
-    public String login(String email, String password) throws UserNotFoundException, WrongPasswordException {
+    public String login(String email, String password) throws UserNotFoundException, WrongPasswordException, LoginLimitReachedException {
         Optional<User> userOptional = userRepository.findUserByEmail(email);
 
         if (userOptional.isEmpty()) {
@@ -59,6 +57,11 @@ public class AuthService {
         boolean matches = bCryptPasswordEncoder.matches(password, userOptional.get().getPassword());
         if (!matches) {
             throw new WrongPasswordException("Wrong password");
+        }
+
+        // When user login in three devices then ask for logout from other devices
+        if (loginLimitReached(userOptional.get().getId())) {
+            throw new LoginLimitReachedException("You have reached the maximum number of login sessions");
         }
 
         String token = createJwtToken(userOptional.get().getId(), new ArrayList<>(), userOptional.get().getEmail());
@@ -74,6 +77,7 @@ public class AuthService {
         Date datePlus30Days = calendar.getTime();
 
         session.setExpiringAt(datePlus30Days);
+        session.setSessionStatus(SessionStatus.ACTIVE);
         sessionRepository.save(session);
 
         return token;
@@ -124,5 +128,20 @@ public class AuthService {
                 .compact();
 
         return token;
+    }
+
+    private Boolean loginLimitReached(Long userId) {
+        List<Session> getAllSessions = sessionRepository.getAllByUser_Id(userId);
+        int activeSessions = 0;
+        for (Session session : getAllSessions) {
+            if (session.getSessionStatus().equals(SessionStatus.ACTIVE)) {
+                activeSessions++;
+            }
+        }
+        if (activeSessions == 3) {
+            return true;
+        }
+
+        return false;
     }
 }

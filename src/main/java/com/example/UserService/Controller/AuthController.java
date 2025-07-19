@@ -55,6 +55,7 @@ public class AuthController {
             return response;
         } catch (Exception e) {
             loginResponseDto.setStatus(RequestStatus.FAILURE);
+            loginResponseDto.setMessage(e.getMessage());
             ResponseEntity<LoginResponseDto> response = new ResponseEntity<>(
                     loginResponseDto,
                     null,
