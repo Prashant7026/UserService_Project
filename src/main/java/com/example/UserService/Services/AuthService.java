@@ -1,5 +1,6 @@
 package com.example.UserService.Services;
 
+import com.example.UserService.Exception.LoginSessionExpiredException;
 import com.example.UserService.Exception.UserAlreadyExistsException;
 import com.example.UserService.Exception.UserNotFoundException;
 import com.example.UserService.Exception.WrongPasswordException;
@@ -78,21 +79,23 @@ public class AuthService {
         return token;
     }
 
-    public Boolean validate(String token) {
+    public Boolean validate(String token) throws Exception {
         try {
             Jws<Claims> claims = Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token);
 
-            /*
             // We can do all the checks/validations here
             Date expriyDate = claims.getPayload().getExpiration();
+            Calendar calendar = Calendar.getInstance();
+            Date currentDate = calendar.getTime();
+            if (expriyDate.equals(currentDate)) {
+                throw new LoginSessionExpiredException("Session has expired");
+            }
             Long userId = claims.getPayload().get("user_id", Long.class);
-             */
-
         } catch (Exception e) {
-            return false;
+            throw e;
         }
 
         return true;
