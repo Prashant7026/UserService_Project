@@ -51,7 +51,7 @@ public class AuthController {
                     headers,
                     HttpStatus.OK
             );
-
+ 
             return response;
         } catch (Exception e) {
             loginResponseDto.setStatus(RequestStatus.FAILURE);
